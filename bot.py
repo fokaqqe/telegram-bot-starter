@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# pylint: disable=unused-argument
-# This program is dedicated to the public domain under the CC0 license.
-
 """
 Simple Bot to reply to Telegram messages.
 
@@ -17,7 +13,6 @@ bot.
 
 import logging
 import os
-
 from dotenv import load_dotenv
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
@@ -31,73 +26,65 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
+# This will hold our queue of users
+users_queue = []
+priority_users = []
 
-# Define a few command handlers. These usually take the two arguments update and
-# context.
+# Define a few command handlers. These usually take the two arguments update and context.
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
-    user = update.effective_user
     await update.message.reply_html(
-        rf"Hi {user.mention_html()}!",
+        "Добро пожаловать в электронную очередь! Используйте команду /register для регистрации.",
         reply_markup=ForceReply(selective=True),
     )
 
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /help is issued."""
-    await update.message.reply_text("Help!")
+async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Register user in the queue."""
+    if context.args:
+        name = ' '.join(context.args)
+        users_queue.append(name)
+        await update.message.reply_text(f"{name} успешно зарегистрирован в очереди!")
+    else:
+        await update.message.reply_text("Пожалуйста, укажите ваше имя.")
 
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
-    await update.message.reply_text(update.message.text)
+async def check_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Check the current users in the queue."""
+    if users_queue:
+        queue_status = '\n'.join(users_queue)
+        await update.message.reply_text(f"Текущие записавшиеся в очередь:\n{queue_status}")
+    else:
+        await update.message.reply_text("В очереди пока никого нет.")
+
+
+async def position(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Check user's position in the queue."""
+    if context.args:
+        user_name = ' '.join(context.args)
+        if user_name in users_queue:
+            position = users_queue.index(user_name) + 1
+            await update.message.reply_text(f"{user_name}, ваша позиция в очереди: {position}.")
+        else:
+            await update.message.reply_text("Вы не зарегистрированы в очереди.")
+    else:
+        await update.message.reply_text("Пожалуйста, укажите ваше имя для проверки позиции.")
 
 
 def main() -> None:
     """Start the bot."""
     load_dotenv()
+    TOKEN = os.getenv("TELEGRAM_TOKEN")  # Убедитесь, что вы установили переменную окружения TELEGRAM_TOKEN
 
-   users_queue = []
-   priority_users = []
+    application = Application.builder().token(TOKEN).build()
 
-   def start(update: Update, context: CallbackContext) -> None:
-       update.message.reply_text("Добро пожаловать в электронную очередь! Используйте команду /register для регистрации.")
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("register", register))
+    application.add_handler(CommandHandler("check_queue", check_queue))
+    application.add_handler(CommandHandler("position", position))
 
-   def register(update: Update, context: CallbackContext) -> None:
-       if context.args:
-           name = ' '.join(context.args)
-           users_queue.append(name)
-           update.message.reply_text(f"{name} успешно зарегистрирован в очереди!")
-       else:
-           update.message.reply_text("Пожалуйста, укажите ваше имя.")
+    application.run_polling()
 
-   def check_queue(update: Update, context: CallbackContext) -> None:
-       if users_queue:
-           queue_status = '\n'.join(users_queue)
-           update.message.reply_text(f"Текущие записавшиеся в очередь:\n{queue_status}")
-       else:
-           update.message.reply_text("В очереди пока никого нет.")
 
-   def position(update: Update, context: CallbackContext) -> None:
-       user_name = update.message.text.split(" ", 1)[1]
-       if user_name in users_queue:
-           position = users_queue.index(user_name) + 1
-           update.message.reply_text(f"{user_name}, ваша позиция в очереди: {position}.")
-       else:
-           update.message.reply_text("Вы не зарегистрированы в очереди.")
-
-   def main():
-       updater = Updater(TOKEN)
-       dispatcher = updater.dispatcher
-
-       dispatcher.add_handler(CommandHandler("start", start))
-       dispatcher.add_handler(CommandHandler("register", register))
-       dispatcher.add_handler(CommandHandler("check_queue", check_queue))
-       dispatcher.add_handler(CommandHandler("position", position))
-
-       updater.start_polling()
-       updater.idle()
-
-   if __name__ == '__main__':
-       main()
-   
+if __name__ == '__main__':
+    main()
