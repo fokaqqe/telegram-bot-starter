@@ -20,7 +20,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     welcome_message = f"Привет, {user}! Я бот, который поможет с регистрацией пользователей.\n\n" \
                       "Вот список команд, которые я понимаю:\n" \
                       "/register - зарегистрировать себя\n" \
-                      "/clear_queue - очистить очередь (только для вас)\n" \
                       "/queue - посмотреть текущую очередь"
     await update.message.reply_text(welcome_message, reply_markup=ForceReply(selective=True))
 
@@ -37,8 +36,7 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     # Проверяем длину очереди и добавляем пользователя "подход по второму кругу"
     if len(queue) % 3 == 0:
-        queue.append("подход по второму кругу")
-        await update.message.reply_text("Добавлен пользователь 'подход по второму кругу' в очередь.")
+        queue.append("подход по второму кругу") 
 
     return ConversationHandler.END
 
