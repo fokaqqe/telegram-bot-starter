@@ -57,9 +57,6 @@ def main() -> None:
     """Start the bot."""
     load_dotenv()
 
-pip install python-telegram-bot
-   
-
  from telegram import Update
    from telegram.ext import Updater, CommandHandler, CallbackContext
 
