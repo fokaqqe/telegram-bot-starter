@@ -96,7 +96,7 @@ def main() -> None:
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
-  application.add_handler(CommandHandler("clear_queue", clear_queue))
+    application.add_handler(CommandHandler("clear_queue", clear_queue))
     application.add_handler(CommandHandler("queue", show_queue))
     application.add_handler(CommandHandler("notify", notify_users))
 
