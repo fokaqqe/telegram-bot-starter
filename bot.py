@@ -56,7 +56,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 def main() -> None:
     """Start the bot."""
     load_dotenv()
-   TOKEN = '7074843158:AAE64r9PhjmWiwZCrzPAZFbv1itQCGsTtH4'
 
    users_queue = []
    priority_users = []
