@@ -18,7 +18,7 @@ user_ids = set()  # Для отслеживания зарегистрирова
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user.full_name
-    welcome_message = f"Привет, {user}! Я бот, который поможет с регистрацией пользователей.\n\n" \
+    welcome_message = f"Привет, {user}! Я бот, который поможет тебе записатся в очередь.\n\n" \
                       "Вот список команд, которые я понимаю:\n" \
                       "/register - зарегистрировать себя\n" \
                       "/queue - посмотреть текущую очередь\n" 
