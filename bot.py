@@ -57,19 +57,55 @@ def main() -> None:
     """Start the bot."""
     load_dotenv()
 
-    # Create the Application and pass it your bot's token.
-    application = Application.builder().token(os.environ["TOKEN"]).build()
+pip install python-telegram-bot
+   
 
-    # on different commands - answer in Telegram
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
+ from telegram import Update
+   from telegram.ext import Updater, CommandHandler, CallbackContext
 
-    # on non command i.e message - echo the message on Telegram
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+   TOKEN = '7074843158:AAE64r9PhjmWiwZCrzPAZFbv1itQCGsTtH4'
 
-    # Run the bot until the user presses Ctrl-C
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+   users_queue = []
+   priority_users = []
 
+   def start(update: Update, context: CallbackContext) -> None:
+       update.message.reply_text("Добро пожаловать в электронную очередь! Используйте команду /register для регистрации.")
 
-if __name__ == "__main__":
-    main()
+   def register(update: Update, context: CallbackContext) -> None:
+       if context.args:
+           name = ' '.join(context.args)
+           users_queue.append(name)
+           update.message.reply_text(f"{name} успешно зарегистрирован в очереди!")
+       else:
+           update.message.reply_text("Пожалуйста, укажите ваше имя.")
+
+   def check_queue(update: Update, context: CallbackContext) -> None:
+       if users_queue:
+           queue_status = '\n'.join(users_queue)
+           update.message.reply_text(f"Текущие записавшиеся в очередь:\n{queue_status}")
+       else:
+           update.message.reply_text("В очереди пока никого нет.")
+
+   def position(update: Update, context: CallbackContext) -> None:
+       user_name = update.message.text.split(" ", 1)[1]
+       if user_name in users_queue:
+           position = users_queue.index(user_name) + 1
+           update.message.reply_text(f"{user_name}, ваша позиция в очереди: {position}.")
+       else:
+           update.message.reply_text("Вы не зарегистрированы в очереди.")
+
+   def main():
+       updater = Updater(TOKEN)
+       dispatcher = updater.dispatcher
+
+       dispatcher.add_handler(CommandHandler("start", start))
+       dispatcher.add_handler(CommandHandler("register", register))
+       dispatcher.add_handler(CommandHandler("check_queue", check_queue))
+       dispatcher.add_handler(CommandHandler("position", position))
+
+       updater.start_polling()
+       updater.idle()
+
+   if __name__ == '__main__':
+       main()
+   
