@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 # Включаем логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)  # исправлено здесь
 
 # Состояния для ConversationHandler
 NAME = range(1)
@@ -21,7 +21,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     welcome_message = f"Привет, {user}! Я бот, который поможет с регистрацией пользователей.\n\n" \
                       "Вот список команд, которые я понимаю:\n" \
                       "/register - зарегистрировать себя\n" \
-                      "/queue - посмотреть текущую очередь\n" 
+                      "/queue - посмотреть текущую очередь\n"
     await update.message.reply_text(welcome_message, reply_markup=ForceReply(selective=True))
 
 # Команда /register
@@ -84,6 +84,7 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 def main() -> None:
     """Запускаем бота."""
     application = ApplicationBuilder().token("7074843158:AAE64r9PhjmWiwZCrzPAZFbv1itQCGsTtH4").build()  # Замените вашим токеном
+
 
     # Определяем обработчики
     conv_handler = ConversationHandler(
