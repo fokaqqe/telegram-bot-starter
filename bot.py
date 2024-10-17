@@ -5,10 +5,10 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 # Включаем логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(name)
 
 # Состояния для ConversationHandler
-NAME, = range(1)
+NAME = range(1)
 
 # Глобальная переменная для хранения пользователей
 queue = []
@@ -17,17 +17,11 @@ user_ids = set()  # Для отслеживания зарегистрирова
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_id = update.effective_user.id
     user = update.effective_user.full_name
-
-    # Регистрируем пользователя
-    user_ids.add(user_id)
-
     welcome_message = f"Привет, {user}! Я бот, который поможет с регистрацией пользователей.\n\n" \
                       "Вот список команд, которые я понимаю:\n" \
                       "/register - зарегистрировать себя\n" \
-                      "/queue - посмотреть текущую очередь\n" \
-                      "/notify - уведомить всех пользователей о новой очереди"
+                      "/queue - посмотреть текущую очередь\n" 
     await update.message.reply_text(welcome_message, reply_markup=ForceReply(selective=True))
 
 # Команда /register
@@ -44,6 +38,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_name = update.message.text.strip()
     user_id = update.effective_user.id
+    user_ids.add(user_id)
     queue.append(user_name)
     await update.message.reply_text(f"Вы успешно зарегистрированы как {user_name}!")
 
@@ -99,18 +94,17 @@ def main() -> None:
         fallbacks=[],
     )
 
-    # Регистрация обработчиков команд
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
-    application.add_handler(CommandHandler("clear_queue", clear_queue))
+  application.add_handler(CommandHandler("clear_queue", clear_queue))
     application.add_handler(CommandHandler("queue", show_queue))
     application.add_handler(CommandHandler("notify", notify_users))
 
-    # Обработчик ошибок
+    # Логирование ошибок
     application.add_error_handler(error)
 
     # Запуск бота
     application.run_polling()
 
-if __name__ == '__main__':
+if name == 'main':
     main()
