@@ -56,10 +56,6 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 def main() -> None:
     """Start the bot."""
     load_dotenv()
-
- from telegram import Update
-   from telegram.ext import Updater, CommandHandler, CallbackContext
-
    TOKEN = '7074843158:AAE64r9PhjmWiwZCrzPAZFbv1itQCGsTtH4'
 
    users_queue = []
