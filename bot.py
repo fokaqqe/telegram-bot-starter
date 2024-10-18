@@ -61,7 +61,7 @@ async def clear_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     
     # Уведомляем подписчиков о очистке очереди
     for subscriber_id in subscribers:
-        await context.bot.send_message(chat_id=subscriber_id, text="Очередь была очищена.")
+        await context.bot.send_message(chat_id=subscriber_id, text="Открыта запись в новую очередь!")
 
 # Команда /queue
 async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
