@@ -19,11 +19,11 @@ user_ids = set()  # Для отслеживания зарегистрирова
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user.full_name
-    welcome_message = f"Привет, {user}! Я бот, который поможет тебе записаться в очередь к твоему любимому преподавателю.\n\n" \
+    welcome_message = f"Привет, {user}! Я бот, который поможет тебе записаться в очередь.\n\n" \
                       "Вот список команд, которые я понимаю:\n" \
                       "/register - зарегистрировать себя\n" \
                       "/queue - посмотреть текущую очередь\n" \
-                      "/subscribe - подписаться на уведомления (подпишись чтобы знать когда будет новая запись)\n" 
+                      "/subscribe - подписаться на уведомления\n" 
     await update.message.reply_text(welcome_message, reply_markup=ForceReply(selective=True))
 
 # Команда /register
@@ -58,7 +58,7 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def process_clear_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.text.strip() != secret_code:
         await update.message.reply_text("Неверный код. Очередь не очищена.")
-        return
+        return ConversationHandler.END
 
     queue.clear()
     user_ids.clear()  # Очищаем список зарегистрированных пользователей
@@ -66,7 +66,9 @@ async def process_clear_code(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     # Уведомляем подписчиков о очистке очереди
     for subscriber_id in subscribers:
-        await context.bot.send_message(chat_id=subscriber_id, text="Очередь была очищена!")
+        await context.bot.send_message(chat_id=subscriber_id, text="Открыта запись в новую очередь!")
+
+    return ConversationHandler.END
 
 # Команда /queue
 async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -85,8 +87,8 @@ async def subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Вы успешно подписались на уведомления.")
 
 # Команда /unsubscribe
-async def unsubscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
+async def unsubscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     if user_id in subscribers:
         subscribers.remove(user_id)
@@ -115,6 +117,7 @@ async def process_all_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await context.bot.send_message(chat_id=subscriber_id, text=message_text)
 
     await update.message.reply_text("Сообщение успешно отправлено всем подписчикам.")
+    return ConversationHandler.END
 
 # Обработка ошибок
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
