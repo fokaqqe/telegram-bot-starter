@@ -26,9 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                       "/queue - посмотреть текущую очередь\n" \
                       "/remove - удалить себя из очереди\n" \
                       "/subscribe - подписаться на уведомления\n" \
-                      "/unsubscribe - отписаться от уведомлений\n" \
-                      "/clear - очистить очередь\n" \
-                      "/all - отправить сообщение всем подписчикам\n"
+                      "/unsubscribe - отписаться от уведомлений\n" 
     await update.message.reply_text(welcome_message)
 
 # Команда /register
@@ -149,7 +147,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 # Основная функция запуска бота
 def main():
-    application = ApplicationBuilder().token("YOUR_BOT_TOKEN").build()
+    application = ApplicationBuilder().token("7074843158:AAE64r9PhjmWiwZCrzPAZFbv1itQCGsTtH4").build()
 
     # Обработчики команд
     application.add_handler(CommandHandler("start", start))
