@@ -97,7 +97,7 @@ def main():
     application = ApplicationBuilder().token("YOUR_BOT_TOKEN").build()
 
     # Обработчики команд
-  application.add_handler(CommandHandler("start", start))
+ application.add_handler(CommandHandler("start", start))
     
     # ConversationHandler для регистрации
     application.add_handler(ConversationHandler(
