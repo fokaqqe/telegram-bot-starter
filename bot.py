@@ -87,6 +87,59 @@ async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await update.message.reply_text(queue_output)
     else:
         await update.message.reply_text("Очередь пуста.")
+      
+ # Команда /subscribe
+async def subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.effective_user.id
+    if user_id in subscribers:
+        await update.message.reply_text("Вы уже подписаны на уведомления.")
+    else:
+        subscribers.add(user_id)
+        await update.message.reply_text("Вы успешно подписались на уведомления.")
+
+# Команда /unsubscribe
+
+async def unsubscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.effective_user.id
+    if user_id in subscribers:
+        subscribers.remove(user_id)
+        await update.message.reply_text("Вы успешно отписаны от уведомлений.")
+    else:
+        await update.message.reply_text("Вы не подписаны на уведомления.")     
+      
+# Команда /remove
+async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.effective_user.id
+    if user_id in user_ids:
+        user_ids.remove(user_id)
+        user_name = user_names.pop(user_id, None)  # Удаляем имя пользователя
+        queue.remove(user_name)  # Удаляем из очереди
+        await update.message.reply_text(f"Вы успешно удалены из очереди ({user_name}).")
+    else:
+        await update.message.reply_text("Вы не зарегистрированы в очереди.")        
+      
+# Команда /all
+async def all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text("Пожалуйста, введите код для отправки сообщения всем подписчикам:")
+    return CODE_FOR_ALL
+      
+# Обработка кода для команды all
+async def process_all_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    if update.message.text.strip() != secret_code:
+        await update.message.reply_text("Неверный код. Сообщение не отправлено.")
+        return ConversationHandler.END
+
+    await update.message.reply_text("Введите сообщение, которое нужно отправить всем подписчикам:")
+    return MESSAGE_FOR_ALL
+
+# Обработчик сообщения для команды all
+async def process_all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message_text = update.message.text.strip()
+    for subscriber_id in subscribers:
+        await context.bot.send_message(chat_id=subscriber_id, text=message_text)
+
+    await update.message.reply_text("Сообщение успешно отправлено всем подписчикам.")
+    return ConversationHandler.END
 
 # Глобальный обработчик ошибок
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
