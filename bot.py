@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 # Включаем логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(name)
 
 # Состояния для ConversationHandler
 NAME, CODE_FOR_CLEAR, CODE_FOR_ALL, MESSAGE_FOR_ALL = range(4)
@@ -15,6 +15,7 @@ queue = []
 subscribers = set()  # Для отслеживания подписчиков на уведомления
 secret_code = '2015'  # Замените вашим особым кодом
 user_ids = set()  # Для отслеживания зарегистрированных пользователей
+user_names = {}  # Для хранения имен пользователей по их ID
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -23,7 +24,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                       "Вот список команд, которые я понимаю:\n" \
                       "/register - зарегистрировать себя\n" \
                       "/queue - посмотреть текущую очередь\n" \
-                      "/subscribe - подписаться на уведомления\n" 
+                      "/remove - удалить себя из очереди\n" \
+                      "/subscribe - подписаться на уведомления\n"
     await update.message.reply_text(welcome_message, reply_markup=ForceReply(selective=True))
 
 # Команда /register
@@ -40,12 +42,15 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_name = update.message.text.strip()
     user_id = update.effective_user.id
+    
+    if len(user_name) > 15:
+        await update.message.reply_text("Пожалуйста, введите имя короче 15 символов.")
+        return NAME
+
     user_ids.add(user_id)
     queue.append(user_name)
+    user_names[user_id] = user_name  # Сохраняем имя пользователя по ID
     await update.message.reply_text(f"Вы успешно зарегистрированы как {user_name}!")
-
-    if len(queue) % 3 == 0:
-        queue.append("--Подход по второму кругу--")
 
     return ConversationHandler.END
 
@@ -62,6 +67,7 @@ async def process_clear_code(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     queue.clear()
     user_ids.clear()  # Очищаем список зарегистрированных пользователей
+    user_names.clear()  # Очищаем имена пользователей
     await update.message.reply_text("Очередь успешно очищена.")
     
     # Уведомляем подписчиков о очистке очереди
@@ -73,7 +79,12 @@ async def process_clear_code(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # Команда /queue
 async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if queue:
-        await update.message.reply_text("Текущая очередь:\n" + "\n".join(queue))
+        queue_output = ""
+        for i in range(0, len(queue), 3):
+            chunk = queue[i:i + 3]
+            queue_output += "\n".join(chunk) + "\n\n--Подход по второму кругу--\n\n"
+        queue_output = queue_output.rstrip("\n\n--Подход по второму кругу--\n\n")  # Убираем последний ненужный текст
+        await update.message.reply_text(queue_output)
     else:
         await update.message.reply_text("Очередь пуста.")
 
@@ -95,6 +106,17 @@ async def unsubscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text("Вы успешно отписаны от уведомлений.")
     else:
         await update.message.reply_text("Вы не подписаны на уведомления.")
+
+# Команда /remove
+async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.effective_user.id
+    if user_id in user_ids:
+        user_ids.remove(user_id)
+        user_name = user_names.pop(user_id, None)  # Удаляем имя пользователя
+        queue.remove(user_name)  # Удаляем из очереди
+        await update.message.reply_text(f"Вы успешно удалены из очереди ({user_name}).")
+    else:
+        await update.message.reply_text("Вы не зарегистрированы в очереди.")
 
 # Команда /all
 async def all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -153,5 +175,5 @@ def main() -> None:
     # Запускаем бота
     application.run_polling()
 
-if __name__ == '__main__':
+if name == 'main':
     main()
