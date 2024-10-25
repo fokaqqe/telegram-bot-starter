@@ -84,7 +84,10 @@ async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         for i in range(0, len(queue), 3):
             chunk = queue[i:i + 3]
             queue_output += "\n".join(chunk) + "\n\n--Подход по второму кругу--\n\n"
-        queue_output = queue_output.rstrip("\n\n--Подход по второму кругу--\n\n")  # Убираем последний ненужный текст
+        
+        # Убираем только последний --Подход по второму кругу-- без удаления других символов
+        queue_output = queue_output.rsplit("\n\n--Подход по второму кругу--\n\n", 1)[0]
+        
         await update.message.reply_text(queue_output)
     else:
         await update.message.reply_text("Очередь пуста.")
