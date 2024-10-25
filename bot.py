@@ -32,9 +32,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Команда /register
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
-    #if user_id in user_ids:
-     #   await update.message.reply_text("Вы уже зарегистрированы в очереди.")
-      #  return ConversationHandler.END
+    if user_id in user_ids:
+        await update.message.reply_text("Вы уже зарегистрированы в очереди.")
+        return ConversationHandler.END
 
     await update.message.reply_text("Как вас записать?")
     return NAME
@@ -80,7 +80,7 @@ async def process_clear_code(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # Команда /queue
 async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if queue:
-        queue_output = ""
+        queue_output = "Текущая очередь:\n\n"
         for i in range(0, len(queue), 3):
             chunk = queue[i:i + 3]
             queue_output += "\n".join(chunk) + "\n\n--Подход по второму кругу--\n\n"
