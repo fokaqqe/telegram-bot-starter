@@ -23,8 +23,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     welcome_message = f"Привет, {user}! Я бот, который поможет тебе записаться в очередь.\n\n" \
                       "Вот список команд, которые я понимаю:\n" \
                       "/register - зарегистрировать себя\n" \
-                      "/queue - посмотреть текущую очередь\n" \
                       "/remove - удалить себя из очереди\n" \
+                      "/queue - посмотреть текущую очередь\n\n" \
                       "/subscribe - подписаться на уведомления\n" \
                       "/unsubscribe - отписаться от уведомлений\n" 
     await update.message.reply_text(welcome_message)
@@ -32,9 +32,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Команда /register
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
-    if user_id in user_ids:
-        await update.message.reply_text("Вы уже зарегистрированы в очереди.")
-        return ConversationHandler.END
+  #  if user_id in user_ids:
+   #     await update.message.reply_text("Вы уже зарегистрированы в очереди.")
+   #     return ConversationHandler.END
 
     await update.message.reply_text("Как вас записать?")
     return NAME
@@ -112,11 +112,12 @@ async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     if user_id in user_ids:
         user_ids.remove(user_id)
-        user_name = user_names.pop(user_id, None)  # Удаляем имя пользователя
-        queue.remove(user_name)  # Удаляем из очереди
+        user_name = user_names.pop(user_id, None)  # Удаляем имя пользователя по ID
+        if user_name and user_name in queue:
+            queue.remove(user_name)  # Удаляем из очереди, если имя найдено
         await update.message.reply_text(f"Вы успешно удалены из очереди ({user_name}).")
     else:
-        await update.message.reply_text("Вы не зарегистрированы в очереди.")        
+        await update.message.reply_text("Вы не зарегистрированы в очереди.")      
 
 # Команда /all
 async def all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
