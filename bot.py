@@ -32,9 +32,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Команда /register
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
-  #  if user_id in user_ids:
-   #     await update.message.reply_text("Вы уже зарегистрированы в очереди.")
-   #     return ConversationHandler.END
+    if user_id in user_ids:
+        await update.message.reply_text("Вы уже зарегистрированы в очереди.")
+        return ConversationHandler.END
 
     await update.message.reply_text("Как вас записать?")
     return NAME
