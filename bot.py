@@ -8,7 +8,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # Состояния для ConversationHandler
-NAME, CODE_FOR_CLEAR = range(2)
+NAME, CODE_FOR_CLEAR, CODE_FOR_ALL, MESSAGE_FOR_ALL = range(4)
 
 # Глобальная переменная для хранения пользователей
 queue = []
@@ -25,15 +25,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                       "/register - зарегистрировать себя\n" \
                       "/queue - посмотреть текущую очередь\n" \
                       "/remove - удалить себя из очереди\n" \
-                      "/subscribe - подписаться на уведомления\n"
+                      "/subscribe - подписаться на уведомления\n" \
+                      "/unsubscribe - отписаться от уведомлений\n" \
+                      "/clear - очистить очередь\n" \
+                      "/all - отправить сообщение всем подписчикам\n"
     await update.message.reply_text(welcome_message)
 
 # Команда /register
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
-    if user_id in user_ids:
-        await update.message.reply_text("Вы уже зарегистрированы в очереди.")
-        return ConversationHandler.END
+    #if user_id in user_ids:
+     #   await update.message.reply_text("Вы уже зарегистрированы в очереди.")
+      #  return ConversationHandler.END
 
     await update.message.reply_text("Как вас записать?")
     return NAME
@@ -88,7 +91,7 @@ async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     else:
         await update.message.reply_text("Очередь пуста.")
       
- # Команда /subscribe
+# Команда /subscribe
 async def subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     if user_id in subscribers:
@@ -98,7 +101,6 @@ async def subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Вы успешно подписались на уведомления.")
 
 # Команда /unsubscribe
-
 async def unsubscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     if user_id in subscribers:
@@ -117,13 +119,13 @@ async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(f"Вы успешно удалены из очереди ({user_name}).")
     else:
         await update.message.reply_text("Вы не зарегистрированы в очереди.")        
-      
+
 # Команда /all
 async def all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Пожалуйста, введите код для отправки сообщения всем подписчикам:")
     return CODE_FOR_ALL
-      
-# Обработка кода для команды all
+
+# Обработка кода для команды /all
 async def process_all_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if update.message.text.strip() != secret_code:
         await update.message.reply_text("Неверный код. Сообщение не отправлено.")
@@ -132,7 +134,7 @@ async def process_all_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await update.message.reply_text("Введите сообщение, которое нужно отправить всем подписчикам:")
     return MESSAGE_FOR_ALL
 
-# Обработчик сообщения для команды all
+# Обработка сообщения для команды /all
 async def process_all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message_text = update.message.text.strip()
     for subscriber_id in subscribers:
@@ -147,10 +149,13 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 # Основная функция запуска бота
 def main():
-    application = ApplicationBuilder().token("7074843158:AAE64r9PhjmWiwZCrzPAZFbv1itQCGsTtH4").build()
+    application = ApplicationBuilder().token("YOUR_BOT_TOKEN").build()
 
     # Обработчики команд
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("subscribe", subscribe))
+    application.add_handler(CommandHandler("unsubscribe", unsubscribe))
+    application.add_handler(CommandHandler("remove", remove))
     
     # ConversationHandler для регистрации
     application.add_handler(ConversationHandler(
@@ -161,11 +166,21 @@ def main():
         fallbacks=[]
     ))
 
-    # ConversationHandler для очистки
+    # ConversationHandler для очистки очереди
     application.add_handler(ConversationHandler(
         entry_points=[CommandHandler("clear", clear)],
         states={
             CODE_FOR_CLEAR: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_clear_code)],
+        },
+        fallbacks=[]
+    ))
+
+    # ConversationHandler для команды /all
+    application.add_handler(ConversationHandler(
+        entry_points=[CommandHandler("all", all_message)],
+        states={
+            CODE_FOR_ALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_all_code)],
+            MESSAGE_FOR_ALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_all_message)]
         },
         fallbacks=[]
     ))
