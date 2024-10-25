@@ -1,14 +1,14 @@
 import logging
-from telegram import Update, ForceReply
+from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
 # Включаем логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
 
 # Состояния для ConversationHandler
-NAME, CODE_FOR_CLEAR, CODE_FOR_ALL, MESSAGE_FOR_ALL = range(4)
+NAME, CODE_FOR_CLEAR = range(2)
 
 # Глобальная переменная для хранения пользователей
 queue = []
@@ -26,7 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                       "/queue - посмотреть текущую очередь\n" \
                       "/remove - удалить себя из очереди\n" \
                       "/subscribe - подписаться на уведомления\n"
-    await update.message.reply_text(welcome_message, reply_markup=ForceReply(selective=True))
+    await update.message.reply_text(welcome_message)
 
 # Команда /register
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -60,7 +60,7 @@ async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return CODE_FOR_CLEAR
 
 # Обработка кода для очистки
-async def process_clear_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def process_clear_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if update.message.text.strip() != secret_code:
         await update.message.reply_text("Неверный код. Очередь не очищена.")
         return ConversationHandler.END
@@ -88,92 +88,41 @@ async def show_queue(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     else:
         await update.message.reply_text("Очередь пуста.")
 
-# Команда /subscribe
-async def subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_id = update.effective_user.id
-    if user_id in subscribers:
-        await update.message.reply_text("Вы уже подписаны на уведомления.")
-    else:
-        subscribers.add(user_id)
-        await update.message.reply_text("Вы успешно подписались на уведомления.")
+# Глобальный обработчик ошибок
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.error(msg="Произошла ошибка при обработке обновления", exc_info=context.error)
 
-# Команда /unsubscribe
+# Основная функция запуска бота
+def main():
+    application = ApplicationBuilder().token("YOUR_BOT_TOKEN").build()
 
-async def unsubscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_id = update.effective_user.id
-    if user_id in subscribers:
-        subscribers.remove(user_id)
-        await update.message.reply_text("Вы успешно отписаны от уведомлений.")
-    else:
-        await update.message.reply_text("Вы не подписаны на уведомления.")
-
-# Команда /remove
-async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_id = update.effective_user.id
-    if user_id in user_ids:
-        user_ids.remove(user_id)
-        user_name = user_names.pop(user_id, None)  # Удаляем имя пользователя
-        queue.remove(user_name)  # Удаляем из очереди
-        await update.message.reply_text(f"Вы успешно удалены из очереди ({user_name}).")
-    else:
-        await update.message.reply_text("Вы не зарегистрированы в очереди.")
-
-# Команда /all
-async def all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text("Пожалуйста, введите код для отправки сообщения всем подписчикам:")
-    return CODE_FOR_ALL
-
-# Обработка кода для команды all
-async def process_all_code(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    if update.message.text.strip() != secret_code:
-        await update.message.reply_text("Неверный код. Сообщение не отправлено.")
-        return ConversationHandler.END
-
-    await update.message.reply_text("Введите сообщение, которое нужно отправить всем подписчикам:")
-    return MESSAGE_FOR_ALL
-
-# Обработчик сообщения для команды all
-async def process_all_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    message_text = update.message.text.strip()
-    for subscriber_id in subscribers:
-        await context.bot.send_message(chat_id=subscriber_id, text=message_text)
-
-    await update.message.reply_text("Сообщение успешно отправлено всем подписчикам.")
-    return ConversationHandler.END
-
-# Обработка ошибок
-async def error(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.warning(f'Update {update} caused error {context.error}')
-
-def main() -> None:
-    """Запускаем бота."""
-    application = ApplicationBuilder().token("7074843158:AAE64r9PhjmWiwZCrzPAZFbv1itQCGsTtH4").build()  # Замените вашим токеном
-
-    # Определяем обработчики
-    conversation_handler = ConversationHandler(
-        entry_points=[
-            CommandHandler('register', register),
-            CommandHandler('clear', clear),
-            CommandHandler('all', all_message)
-        ],
+    # Обработчики команд
+  application.add_handler(CommandHandler("start", start))
+    
+    # ConversationHandler для регистрации
+    application.add_handler(ConversationHandler(
+        entry_points=[CommandHandler("register", register)],
         states={
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
-            CODE_FOR_CLEAR: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_clear_code)],
-            CODE_FOR_ALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_all_code)],
-            MESSAGE_FOR_ALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_all_message)],
         },
-        fallbacks=[],
-    )
+        fallbacks=[]
+    ))
 
-    # Добавляем обработчики
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(conversation_handler)
+    # ConversationHandler для очистки
+    application.add_handler(ConversationHandler(
+        entry_points=[CommandHandler("clear", clear)],
+        states={
+            CODE_FOR_CLEAR: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_clear_code)],
+        },
+        fallbacks=[]
+    ))
+
     application.add_handler(CommandHandler("queue", show_queue))
-    application.add_handler(CommandHandler("subscribe", subscribe))
-    application.add_handler(CommandHandler("unsubscribe", unsubscribe))
 
-    # Запускаем бота
+    # Обработчик ошибок
+    application.add_error_handler(error_handler)
+
     application.run_polling()
 
-if name == 'main':
+if name == '__main__':
     main()
